@@ -185,7 +185,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'slrs-session-v1',
-      partials: ['sentence', 'conversationHistory', 'speechEnabled', 'language', 'isDark', 'smoothingEnabled', 'keypointOverlayVisible', 'privacyMode', 'customGestures', 'metrics'] as any,
+      
       partialize: (state) => ({
         sentence: state.privacyMode ? [] : state.sentence,
         conversationHistory: state.privacyMode ? [] : state.conversationHistory,
