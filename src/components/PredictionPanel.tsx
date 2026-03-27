@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, TrendingUp } from 'lucide-react';
+import { MessageSquare, TrendingUp, Undo2, Type } from 'lucide-react';
 
 function PredictionPanel() {
-  const { currentPrediction, sentence } = useAppStore();
+  const { currentPrediction, sentence, undoLastWord, addPunctuation } = useAppStore();
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -59,11 +59,34 @@ function PredictionPanel() {
 
       {/* Sentence builder */}
       <div className="glass rounded-2xl p-5 flex-1 min-h-0 flex flex-col">
-        <div className="flex items-center gap-2 mb-3">
-          <MessageSquare className="w-4 h-4 text-accent" />
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Translated Sentence
-          </span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-accent" />
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Translated Sentence
+            </span>
+          </div>
+          {sentence.length > 0 && (
+            <div className="flex items-center gap-1">
+              {['.', ',', '?', '!'].map((p) => (
+                <button
+                  key={p}
+                  onClick={() => addPunctuation(p)}
+                  className="w-7 h-7 rounded-lg text-xs font-mono bg-secondary text-secondary-foreground hover:opacity-80 transition-opacity flex items-center justify-center"
+                  aria-label={`Add ${p}`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                onClick={undoLastWord}
+                className="w-7 h-7 rounded-lg bg-secondary text-secondary-foreground hover:opacity-80 transition-opacity flex items-center justify-center ml-1"
+                aria-label="Undo last word"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto">
           {sentence.length > 0 ? (
