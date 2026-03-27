@@ -2,9 +2,10 @@ import { Hand, Sun, Moon, Bug } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import SettingsPanel from './SettingsPanel';
 
 export default function Navbar() {
-  const { isDark, toggleTheme, showDebug, toggleDebug, fps } = useAppStore();
+  const { isDark, toggleTheme, showDebug, toggleDebug, fps, isDetecting } = useAppStore();
   const location = useLocation();
   const isDetectPage = location.pathname === '/detect';
 
@@ -25,6 +26,13 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-2">
+          {/* Status indicator */}
+          {isDetectPage && (
+            <div className="flex items-center gap-1.5 mr-2">
+              <span className={`w-2 h-2 rounded-full ${isDetecting ? 'bg-primary animate-pulse' : 'bg-muted-foreground'}`} />
+              <span className="text-xs text-muted-foreground">{isDetecting ? 'Detecting' : 'Stopped'}</span>
+            </div>
+          )}
           {isDetectPage && showDebug && (
             <span className="text-xs font-mono text-muted-foreground px-2 py-1 rounded-lg bg-secondary">
               {fps} FPS
@@ -46,6 +54,7 @@ export default function Navbar() {
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
+          <SettingsPanel />
         </div>
       </div>
     </motion.nav>

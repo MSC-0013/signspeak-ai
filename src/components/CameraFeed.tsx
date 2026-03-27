@@ -7,7 +7,7 @@ import KeypointOverlay from './KeypointOverlay';
 
 function CameraFeed() {
   const { videoRef, startCamera, stopCamera } = useCamera();
-  const { isDetecting, cameraError, setFps } = useAppStore();
+  const { isDetecting, cameraError, setFps, keypointOverlayVisible, gestureFlash } = useAppStore();
   const { simulatePrediction } = usePrediction();
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const fpsRef = useRef({ frames: 0, lastTime: performance.now() });
@@ -34,7 +34,11 @@ function CameraFeed() {
   }, [isDetecting, startCamera, stopCamera, simulatePrediction, setFps]);
 
   return (
-    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-secondary border border-border">
+    <div
+      className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-secondary border-2 transition-colors duration-300 ${
+        gestureFlash ? 'border-primary shadow-[0_0_20px_hsl(var(--primary)/0.4)]' : 'border-border'
+      }`}
+    >
       {cameraError ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
           <VideoOff className="w-12 h-12 text-destructive" />
@@ -46,6 +50,7 @@ function CameraFeed() {
             <Camera className="w-8 h-8 text-primary" />
           </div>
           <p className="text-sm text-muted-foreground">Camera feed will appear here</p>
+          <p className="text-xs text-muted-foreground">Press <kbd className="px-1.5 py-0.5 rounded bg-secondary font-mono text-xs">Space</kbd> to start</p>
         </div>
       ) : null}
       <video
@@ -55,7 +60,7 @@ function CameraFeed() {
         muted
         className={`w-full h-full object-cover ${isDetecting ? 'opacity-100' : 'opacity-0'}`}
       />
-      {isDetecting && <KeypointOverlay />}
+      {isDetecting && keypointOverlayVisible && <KeypointOverlay />}
       {isDetecting && (
         <div className="absolute top-3 left-3 flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
