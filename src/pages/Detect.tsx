@@ -1,77 +1,66 @@
 import { motion } from 'framer-motion';
 import CameraFeed from '@/components/CameraFeed';
-import PredictionPanel from '@/components/PredictionPanel';
-import ControlsBar from '@/components/ControlsBar';
-import ConversationHistory from '@/components/ConversationHistory';
-import ConfidenceChart from '@/components/ConfidenceChart';
-import GesturePractice from '@/components/GesturePractice';
+import PredictionDisplay from '@/components/PredictionDisplay';
+import ConfidenceBar from '@/components/ConfidenceBar';
+import StatusIndicator from '@/components/StatusIndicator';
+import AppControls from '@/components/AppControls';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAppStore } from '@/store/useAppStore';
-import { useState } from 'react';
-
-type Tab = 'history' | 'practice';
 
 export default function Detect() {
   useKeyboardShortcuts();
-  const { showDebug } = useAppStore();
-  const [tab, setTab] = useState<Tab>('history');
+  const { currentPrediction, isDetecting } = useAppStore();
 
   return (
     <div className="min-h-screen pt-20 pb-8 px-4">
-      <div className="container mx-auto max-w-7xl">
+      <div className="container mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="mb-6"
+          className="text-center mb-8"
         >
           <h1 className="text-2xl font-bold text-foreground">Detection Studio</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Position your hands in front of the camera to begin translating
+            Position your hands in front of the camera to begin
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-7 gap-5 mb-5">
-          {/* Camera + Prediction */}
-          <div className="lg:col-span-3">
-            <CameraFeed />
-          </div>
-          <div className="lg:col-span-2 min-h-[300px]">
-            <PredictionPanel />
-          </div>
-
-          {/* Right sidebar: tabs */}
-          <div className="lg:col-span-2 flex flex-col gap-4 min-h-[300px]">
-            <div className="flex gap-1 bg-secondary rounded-xl p-1">
-              {(['history', 'practice'] as Tab[]).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
-                    tab === t ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            <div className="flex-1 min-h-0">
-              {tab === 'history' ? <ConversationHistory /> : <GesturePractice />}
-            </div>
-          </div>
+        {/* Status */}
+        <div className="flex justify-center mb-6">
+          <StatusIndicator />
         </div>
 
-        {showDebug && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mb-5"
-          >
-            <ConfidenceChart />
-          </motion.div>
-        )}
+        {/* Camera */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="max-w-2xl mx-auto mb-6"
+        >
+          <CameraFeed />
+        </motion.div>
 
-        <ControlsBar />
+        {/* Prediction + Confidence */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="max-w-2xl mx-auto space-y-4 mb-8"
+        >
+          <PredictionDisplay prediction={currentPrediction} />
+          <ConfidenceBar confidence={currentPrediction?.confidence ?? 0} />
+        </motion.div>
+
+        {/* Controls */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="max-w-2xl mx-auto"
+        >
+          <AppControls />
+        </motion.div>
       </div>
     </div>
   );
