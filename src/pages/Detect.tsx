@@ -3,7 +3,6 @@ import CameraFeed from '@/components/CameraFeed';
 import PredictionDisplay from '@/components/PredictionDisplay';
 import ConfidenceBar from '@/components/ConfidenceBar';
 import StatusIndicator from '@/components/StatusIndicator';
-import AppControls from '@/components/AppControls';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 const stagger = {
@@ -20,19 +19,19 @@ export default function Detect() {
   useKeyboardShortcuts();
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-24">
+    <div className="min-h-screen flex items-center justify-center px-4 py-20">
       <motion.div
         variants={stagger}
         initial="hidden"
         animate="show"
-        className="w-full max-w-2xl flex flex-col items-center gap-6"
+        className="w-full max-w-5xl flex flex-col items-center gap-6"
       >
         {/* Status */}
         <motion.div variants={item}>
           <StatusIndicator />
         </motion.div>
 
-        {/* Camera */}
+        {/* Camera — 16:9 full width */}
         <motion.div variants={item} className="w-full">
           <CameraFeed />
         </motion.div>
@@ -43,13 +42,8 @@ export default function Detect() {
         </motion.div>
 
         {/* Confidence */}
-        <motion.div variants={item} className="w-full max-w-sm">
+        <motion.div variants={item} className="w-full max-w-md">
           <ConfidenceBar />
-        </motion.div>
-
-        {/* Controls */}
-        <motion.div variants={item}>
-          <AppControls />
         </motion.div>
       </motion.div>
     </div>
