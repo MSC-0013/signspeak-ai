@@ -35,36 +35,45 @@ function CameraFeed() {
 
   return (
     <div
-      className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-secondary border-2 transition-colors duration-300 ${
-        gestureFlash ? 'border-primary shadow-[0_0_20px_hsl(var(--primary)/0.4)]' : 'border-border'
+      className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-card/50 ring-1 transition-all duration-500 ${
+        gestureFlash
+          ? 'ring-primary/40 shadow-[0_0_40px_-12px_hsl(var(--primary)/0.25)]'
+          : 'ring-border/30'
       }`}
     >
       {cameraError ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-          <VideoOff className="w-12 h-12 text-destructive" />
-          <p className="text-sm text-muted-foreground">{cameraError}</p>
+          <VideoOff className="w-10 h-10 text-destructive/60" />
+          <p className="text-sm text-muted-foreground/70">{cameraError}</p>
         </div>
       ) : !isDetecting ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Camera className="w-8 h-8 text-primary" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-primary/5 flex items-center justify-center">
+            <Camera className="w-6 h-6 text-primary/40" />
           </div>
-          <p className="text-sm text-muted-foreground">Camera feed will appear here</p>
-          <p className="text-xs text-muted-foreground">Press <kbd className="px-1.5 py-0.5 rounded bg-secondary font-mono text-xs">Space</kbd> to start</p>
+          <div className="text-center space-y-1">
+            <p className="text-sm text-muted-foreground/60">Camera feed</p>
+            <p className="text-xs text-muted-foreground/40">
+              Press <kbd className="px-1.5 py-0.5 rounded-md bg-secondary/50 font-mono text-[10px]">Space</kbd> to start
+            </p>
+          </div>
         </div>
       ) : null}
+
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        className={`w-full h-full object-cover ${isDetecting ? 'opacity-100' : 'opacity-0'}`}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${isDetecting ? 'opacity-100' : 'opacity-0'}`}
       />
+
       {isDetecting && keypointOverlayVisible && <KeypointOverlay />}
+
       {isDetecting && (
         <div className="absolute top-3 left-3 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
-          <span className="text-xs font-medium text-foreground bg-secondary/80 backdrop-blur px-2 py-0.5 rounded-md">
+          <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
+          <span className="text-[10px] font-medium text-foreground/80 bg-card/60 backdrop-blur-md px-2 py-0.5 rounded-md">
             LIVE
           </span>
         </div>

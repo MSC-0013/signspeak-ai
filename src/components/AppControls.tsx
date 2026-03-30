@@ -6,24 +6,24 @@ function AppControls() {
   const { isDetecting, setDetecting, clearSentence } = useAppStore();
 
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-center gap-2.5">
       <button
         onClick={() => setDetecting(!isDetecting)}
-        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all ${
+        className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
           isDetecting
-            ? 'bg-destructive text-destructive-foreground hover:opacity-90'
-            : 'bg-primary text-primary-foreground hover:opacity-90 glow-primary'
+            ? 'bg-destructive/10 text-destructive hover:bg-destructive/15'
+            : 'bg-primary/10 text-primary hover:bg-primary/15'
         }`}
       >
-        {isDetecting ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+        {isDetecting ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
         {isDetecting ? 'Stop' : 'Start'}
       </button>
 
       <button
         onClick={clearSentence}
-        className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium bg-secondary text-secondary-foreground hover:opacity-80 transition-opacity"
+        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200"
       >
-        <RotateCcw className="w-4 h-4" />
+        <RotateCcw className="w-3.5 h-3.5" />
         Reset
       </button>
     </div>

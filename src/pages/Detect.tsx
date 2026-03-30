@@ -5,63 +5,53 @@ import ConfidenceBar from '@/components/ConfidenceBar';
 import StatusIndicator from '@/components/StatusIndicator';
 import AppControls from '@/components/AppControls';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useAppStore } from '@/store/useAppStore';
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 6 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const } },
+};
 
 export default function Detect() {
   useKeyboardShortcuts();
-  const { currentPrediction, isDetecting } = useAppStore();
 
   return (
-    <div className="min-h-screen pt-20 pb-8 px-4">
-      <div className="container mx-auto max-w-4xl">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-2xl font-bold text-foreground">Detection Studio</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Position your hands in front of the camera to begin
-          </p>
+    <div className="min-h-screen flex items-center justify-center px-4 py-24">
+      <motion.div
+        variants={stagger}
+        initial="hidden"
+        animate="show"
+        className="w-full max-w-2xl flex flex-col items-center gap-6"
+      >
+        {/* Status */}
+        <motion.div variants={item}>
+          <StatusIndicator />
         </motion.div>
 
-        {/* Status */}
-        <div className="flex justify-center mb-6">
-          <StatusIndicator />
-        </div>
-
         {/* Camera */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="max-w-2xl mx-auto mb-6"
-        >
+        <motion.div variants={item} className="w-full">
           <CameraFeed />
         </motion.div>
 
-        {/* Prediction + Confidence */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="max-w-2xl mx-auto space-y-4 mb-8"
-        >
-          <PredictionDisplay prediction={currentPrediction} />
-          <ConfidenceBar confidence={currentPrediction?.confidence ?? 0} />
+        {/* Prediction */}
+        <motion.div variants={item} className="w-full">
+          <PredictionDisplay />
+        </motion.div>
+
+        {/* Confidence */}
+        <motion.div variants={item} className="w-full max-w-sm">
+          <ConfidenceBar />
         </motion.div>
 
         {/* Controls */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="max-w-2xl mx-auto"
-        >
+        <motion.div variants={item}>
           <AppControls />
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }
