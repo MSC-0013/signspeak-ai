@@ -72,7 +72,7 @@ function CameraFeed() {
 
       {isDetecting && (
         <div className="absolute top-3 left-3 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
           <span className="text-[10px] font-medium text-foreground/80 bg-card/60 backdrop-blur-md px-2 py-0.5 rounded-md">
             LIVE
           </span>
