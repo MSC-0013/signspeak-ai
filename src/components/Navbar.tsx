@@ -1,62 +1,52 @@
 import { Hand, Sun, Moon, LogOut } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 export default function Navbar() {
-  const { isDark, toggleTheme, isDetecting } = useAppStore();
+  const { isDark, toggleTheme } = useAppStore();
   const { user, logout } = useAuthStore();
-  const location = useLocation();
-  const isDetectPage = location.pathname === '/detect';
 
   return (
     <motion.nav
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="fixed top-0 left-0 right-0 z-50 glass-strong"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+      className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-background/80 backdrop-blur-xl"
     >
-      <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:glow-primary transition-shadow">
-            <Hand className="w-5 h-5 text-primary" />
-          </div>
-          <span className="font-bold text-lg tracking-tight text-foreground">
-            Sign<span className="text-primary">Speak AI</span>
+      <div className="container mx-auto flex items-center justify-between h-14 px-4">
+        <Link to="/" className="flex items-center gap-2 group">
+          <Hand className="w-4.5 h-4.5 text-primary/70 group-hover:text-primary transition-colors duration-200" />
+          <span className="text-sm font-semibold tracking-tight text-foreground/90">
+            SignSpeak
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
-          {isDetectPage && (
-            <div className="flex items-center gap-1.5 mr-2">
-              <span className={`w-2 h-2 rounded-full ${isDetecting ? 'bg-primary animate-pulse' : 'bg-muted-foreground'}`} />
-              <span className="text-xs text-muted-foreground">{isDetecting ? 'LIVE' : 'Idle'}</span>
-            </div>
-          )}
-
+        <div className="flex items-center gap-1">
           <button
             onClick={toggleTheme}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/30 transition-all duration-200"
             aria-label="Toggle theme"
           >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
           </button>
 
           {user && (
-            <div className="flex items-center gap-2 ml-2">
+            <>
               <img
                 src={user.avatar}
                 alt={user.name}
-                className="w-8 h-8 rounded-full border border-border"
+                className="w-7 h-7 rounded-full ring-1 ring-border/30 ml-1"
               />
               <button
                 onClick={logout}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/30 transition-all duration-200"
                 aria-label="Logout"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3.5 h-3.5" />
               </button>
-            </div>
+            </>
           )}
         </div>
       </div>
