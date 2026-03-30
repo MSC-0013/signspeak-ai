@@ -1,11 +1,12 @@
-import { Hand, Sun, Moon, Bug } from 'lucide-react';
+import { Hand, Sun, Moon, LogOut } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import SettingsPanel from './SettingsPanel';
 
 export default function Navbar() {
-  const { isDark, toggleTheme, showDebug, toggleDebug, fps, isDetecting } = useAppStore();
+  const { isDark, toggleTheme, isDetecting } = useAppStore();
+  const { user, logout } = useAuthStore();
   const location = useLocation();
   const isDetectPage = location.pathname === '/detect';
 
@@ -21,32 +22,18 @@ export default function Navbar() {
             <Hand className="w-5 h-5 text-primary" />
           </div>
           <span className="font-bold text-lg tracking-tight text-foreground">
-            Sign<span className="text-primary">AI</span>
+            Sign<span className="text-primary">Speak AI</span>
           </span>
         </Link>
 
         <div className="flex items-center gap-2">
-          {/* Status indicator */}
           {isDetectPage && (
             <div className="flex items-center gap-1.5 mr-2">
               <span className={`w-2 h-2 rounded-full ${isDetecting ? 'bg-primary animate-pulse' : 'bg-muted-foreground'}`} />
-              <span className="text-xs text-muted-foreground">{isDetecting ? 'Detecting' : 'Stopped'}</span>
+              <span className="text-xs text-muted-foreground">{isDetecting ? 'LIVE' : 'Idle'}</span>
             </div>
           )}
-          {isDetectPage && showDebug && (
-            <span className="text-xs font-mono text-muted-foreground px-2 py-1 rounded-lg bg-secondary">
-              {fps} FPS
-            </span>
-          )}
-          {isDetectPage && (
-            <button
-              onClick={toggleDebug}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              aria-label="Toggle debug"
-            >
-              <Bug className="w-4 h-4" />
-            </button>
-          )}
+
           <button
             onClick={toggleTheme}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
@@ -54,7 +41,23 @@ export default function Navbar() {
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
-          <SettingsPanel />
+
+          {user && (
+            <div className="flex items-center gap-2 ml-2">
+              <img
+                src={user.avatar}
+                alt={user.name}
+                className="w-8 h-8 rounded-full border border-border"
+              />
+              <button
+                onClick={logout}
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                aria-label="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </motion.nav>
