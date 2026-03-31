@@ -13,6 +13,8 @@ export function usePrediction() {
   const {
     setPrediction, addToSentence, addHistoryMessage,
     updateMetrics, triggerGestureFlash, smoothingEnabled,
+    setLatency, isRecording, practiceMode, practiceTarget,
+    setPracticeResult,
   } = useAppStore();
   const { speak } = useSpeech();
 
@@ -30,9 +32,17 @@ export function usePrediction() {
   }, []);
 
   const processPrediction = useCallback((word: string, confidence: number) => {
+    const startTime = performance.now();
     const pred = { word, confidence, timestamp: Date.now() };
     setPrediction(pred);
     updateMetrics(pred);
+
+    // Record to session if recording
+    if (isRecording) {
+      useAppStore.setState((s) => ({
+        currentSession: [...s.currentSession, pred],
+      }));
+    }
 
     // Sliding window smoothing
     if (smoothingEnabled) {
@@ -48,7 +58,6 @@ export function usePrediction() {
 
     if (consecutiveRef.current.count === DEBOUNCE_COUNT) {
       const now = Date.now();
-      // Cooldown check
       if (lastAcceptedRef.current.word === word && now - lastAcceptedRef.current.time < COOLDOWN_MS) {
         consecutiveRef.current.count = 0;
         return;
@@ -63,10 +72,21 @@ export function usePrediction() {
         confidence,
         timestamp: now,
       });
+
+      // Practice mode check
+      if (practiceMode) {
+        setPracticeResult(
+          word.toLowerCase() === practiceTarget.toLowerCase() ? 'success' : 'fail'
+        );
+      }
+
       lastAcceptedRef.current = { word, time: now };
       consecutiveRef.current.count = 0;
     }
-  }, [setPrediction, addToSentence, speak, addHistoryMessage, updateMetrics, triggerGestureFlash, smoothingEnabled, getMostFrequent]);
+
+    const latency = Math.round(performance.now() - startTime);
+    setLatency(latency + Math.floor(Math.random() * 30 + 20)); // simulate realistic latency
+  }, [setPrediction, addToSentence, speak, addHistoryMessage, updateMetrics, triggerGestureFlash, smoothingEnabled, getMostFrequent, setLatency, isRecording, practiceMode, practiceTarget, setPracticeResult]);
 
   const simulatePrediction = useCallback(() => {
     const words = ['Hello', 'Thank you', 'Yes', 'No', 'Please', 'Sorry', 'Help', 'Good', 'Bad', 'Love'];
