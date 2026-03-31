@@ -27,12 +27,27 @@ export interface SessionMetrics {
   sessionDuration: number;
 }
 
+export interface SessionRecord {
+  id: string;
+  predictions: Prediction[];
+  startTime: number;
+  endTime: number;
+}
+
+export interface CorrectionEntry {
+  id: string;
+  original: string;
+  corrected: string;
+  timestamp: number;
+}
+
 interface AppState {
   // Camera
   isDetecting: boolean;
   cameraError: string | null;
   fps: number;
   showDebug: boolean;
+  latency: number;
 
   // Predictions
   currentPrediction: Prediction | null;
@@ -45,11 +60,12 @@ interface AppState {
   // Speech
   speechEnabled: boolean;
   language: string;
+  isSpeaking: boolean;
 
   // Theme
   isDark: boolean;
 
-  // Settings / feature toggles
+  // Settings
   smoothingEnabled: boolean;
   keypointOverlayVisible: boolean;
   privacyMode: boolean;
@@ -63,10 +79,25 @@ interface AppState {
   // Gesture feedback flash
   gestureFlash: boolean;
 
+  // Session recording
+  isRecording: boolean;
+  currentSession: Prediction[];
+  sessionHistory: SessionRecord[];
+
+  // Practice mode
+  practiceMode: boolean;
+  practiceTarget: string;
+  practiceResult: 'idle' | 'success' | 'fail';
+
+  // Corrections
+  corrections: CorrectionEntry[];
+  showCorrectionModal: boolean;
+
   // Actions
   setDetecting: (v: boolean) => void;
   setCameraError: (e: string | null) => void;
   setFps: (fps: number) => void;
+  setLatency: (ms: number) => void;
   toggleDebug: () => void;
   setPrediction: (p: Prediction | null) => void;
   addToSentence: (word: string) => void;
@@ -75,6 +106,7 @@ interface AppState {
   clearSentence: () => void;
   toggleSpeech: () => void;
   setLanguage: (lang: string) => void;
+  setIsSpeaking: (v: boolean) => void;
   toggleTheme: () => void;
   toggleSmoothing: () => void;
   toggleKeypointOverlay: () => void;
@@ -86,6 +118,19 @@ interface AppState {
   updateMetrics: (prediction: Prediction) => void;
   resetSession: () => void;
   triggerGestureFlash: () => void;
+
+  // Session recording
+  startRecording: () => void;
+  stopRecording: () => void;
+
+  // Practice
+  togglePracticeMode: () => void;
+  setPracticeTarget: (word: string) => void;
+  setPracticeResult: (r: 'idle' | 'success' | 'fail') => void;
+
+  // Corrections
+  addCorrection: (original: string, corrected: string) => void;
+  setShowCorrectionModal: (v: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -94,6 +139,7 @@ export const useAppStore = create<AppState>()(
       isDetecting: false,
       cameraError: null,
       fps: 0,
+      latency: 0,
       showDebug: false,
       currentPrediction: null,
       sentence: [],
@@ -101,6 +147,7 @@ export const useAppStore = create<AppState>()(
       conversationHistory: [],
       speechEnabled: true,
       language: 'en-US',
+      isSpeaking: false,
       isDark: true,
       smoothingEnabled: true,
       keypointOverlayVisible: true,
@@ -113,10 +160,19 @@ export const useAppStore = create<AppState>()(
         sessionDuration: 0,
       },
       gestureFlash: false,
+      isRecording: false,
+      currentSession: [],
+      sessionHistory: [],
+      practiceMode: false,
+      practiceTarget: 'Hello',
+      practiceResult: 'idle',
+      corrections: [],
+      showCorrectionModal: false,
 
       setDetecting: (v) => set({ isDetecting: v }),
       setCameraError: (e) => set({ cameraError: e }),
       setFps: (fps) => set({ fps }),
+      setLatency: (ms) => set({ latency: ms }),
       toggleDebug: () => set((s) => ({ showDebug: !s.showDebug })),
       setPrediction: (p) => set((s) => ({
         currentPrediction: p,
@@ -137,6 +193,7 @@ export const useAppStore = create<AppState>()(
       clearSentence: () => set({ sentence: [], predictionHistory: [], currentPrediction: null }),
       toggleSpeech: () => set((s) => ({ speechEnabled: !s.speechEnabled })),
       setLanguage: (lang) => set({ language: lang }),
+      setIsSpeaking: (v) => set({ isSpeaking: v }),
       toggleTheme: () => set((s) => {
         const next = !s.isDark;
         document.documentElement.classList.toggle('dark', next);
@@ -182,10 +239,43 @@ export const useAppStore = create<AppState>()(
         set({ gestureFlash: true });
         setTimeout(() => set({ gestureFlash: false }), 300);
       },
+
+      // Session recording
+      startRecording: () => set({ isRecording: true, currentSession: [] }),
+      stopRecording: () => set((s) => {
+        if (s.currentSession.length === 0) return { isRecording: false };
+        const record: SessionRecord = {
+          id: crypto.randomUUID(),
+          predictions: [...s.currentSession],
+          startTime: s.currentSession[0]?.timestamp || Date.now(),
+          endTime: Date.now(),
+        };
+        return {
+          isRecording: false,
+          sessionHistory: [...s.sessionHistory, record],
+          currentSession: [],
+        };
+      }),
+
+      // Practice
+      togglePracticeMode: () => set((s) => ({ practiceMode: !s.practiceMode, practiceResult: 'idle' })),
+      setPracticeTarget: (word) => set({ practiceTarget: word, practiceResult: 'idle' }),
+      setPracticeResult: (r) => set({ practiceResult: r }),
+
+      // Corrections
+      addCorrection: (original, corrected) => set((s) => ({
+        corrections: [...s.corrections, {
+          id: crypto.randomUUID(),
+          original,
+          corrected,
+          timestamp: Date.now(),
+        }],
+        showCorrectionModal: false,
+      })),
+      setShowCorrectionModal: (v) => set({ showCorrectionModal: v }),
     }),
     {
       name: 'slrs-session-v1',
-      
       partialize: (state) => ({
         sentence: state.privacyMode ? [] : state.sentence,
         conversationHistory: state.privacyMode ? [] : state.conversationHistory,
@@ -197,6 +287,8 @@ export const useAppStore = create<AppState>()(
         privacyMode: state.privacyMode,
         customGestures: state.customGestures,
         metrics: state.metrics,
+        corrections: state.corrections,
+        sessionHistory: state.sessionHistory,
       }),
     }
   )
