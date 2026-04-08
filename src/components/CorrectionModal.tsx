@@ -1,7 +1,9 @@
 import { memo, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send } from 'lucide-react';
+import { X, Send, AlertTriangle } from 'lucide-react';
+
+const ease = [0.25, 0.1, 0.25, 1] as const;
 
 function CorrectionModal() {
   const { showCorrectionModal, setShowCorrectionModal, currentPrediction, addCorrection } = useAppStore();
@@ -20,45 +22,49 @@ function CorrectionModal() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-md"
           onClick={() => setShowCorrectionModal(false)}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.3, ease }}
             onClick={(e) => e.stopPropagation()}
-            className="glass rounded-2xl p-6 w-full max-w-sm mx-4 space-y-4"
+            className="glass-card rounded-2xl p-6 w-full max-w-sm mx-4 space-y-5"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Correct Prediction</h3>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-destructive/70" />
+                <h3 className="text-sm font-semibold text-foreground">Correct Prediction</h3>
+              </div>
               <button
                 onClick={() => setShowCorrectionModal(false)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                className="btn-ghost !h-7 !px-1.5"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 block mb-1">
+            <div className="p-3 rounded-xl bg-secondary/40">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground/50 block mb-1">
                 Model predicted:
               </span>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-xl font-bold text-foreground">
                 {currentPrediction?.word || '—'}
               </p>
             </div>
 
             <div>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 block mb-1.5">
+              <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground/50 block mb-1.5">
                 Correct gesture:
               </span>
               <input
                 value={corrected}
                 onChange={(e) => setCorrected(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                placeholder="Type the correct word..."
-                className="w-full bg-secondary rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none focus:ring-1 focus:ring-primary/40 transition-all"
+                placeholder="Type the correct word…"
+                className="w-full bg-secondary/40 rounded-xl px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/30 outline-none ring-1 ring-border/30 focus:ring-primary/40 transition-all"
               />
             </div>
 
@@ -71,7 +77,7 @@ function CorrectionModal() {
               Submit Correction
             </button>
 
-            <p className="text-[10px] text-muted-foreground/40 text-center">
+            <p className="text-[10px] text-muted-foreground/35 text-center">
               This helps improve future predictions
             </p>
           </motion.div>

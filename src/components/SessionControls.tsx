@@ -1,6 +1,6 @@
 import { memo, useState, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { Circle, Square, RotateCcw, Play } from 'lucide-react';
+import { Circle, Square, Play, Disc } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function SessionControls() {
@@ -26,14 +26,15 @@ function SessionControls() {
   }, [sessionHistory, replaying]);
 
   return (
-    <div className="glass rounded-2xl p-4">
+    <div className="glass-card rounded-2xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Session Recording
-        </span>
+        <div className="panel-header !mb-0">
+          <Disc className="w-3.5 h-3.5 text-primary" />
+          <span className="panel-label">Session Recording</span>
+        </div>
         {isRecording && (
-          <span className="flex items-center gap-1.5 text-[10px] text-red-400 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span className="flex items-center gap-1.5 text-[10px] text-destructive font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
             Recording
           </span>
         )}
@@ -41,18 +42,12 @@ function SessionControls() {
 
       <div className="flex items-center gap-2">
         {!isRecording ? (
-          <button
-            onClick={startRecording}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
-          >
+          <button onClick={startRecording} className="btn-danger-sm">
             <Circle className="w-3 h-3 fill-current" />
             Record
           </button>
         ) : (
-          <button
-            onClick={stopRecording}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-red-500/15 text-red-400 hover:bg-red-500/25 transition-colors"
-          >
+          <button onClick={stopRecording} className="btn-danger-sm">
             <Square className="w-3 h-3" />
             Stop
           </button>
@@ -61,13 +56,13 @@ function SessionControls() {
         <button
           onClick={replayLast}
           disabled={sessionHistory.length === 0 || replaying}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-secondary text-secondary-foreground hover:opacity-80 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
+          className="btn-ghost"
         >
           <Play className="w-3 h-3" />
           Replay Last
         </button>
 
-        <span className="text-[10px] text-muted-foreground/40 ml-auto">
+        <span className="text-[10px] text-muted-foreground/35 ml-auto font-mono">
           {sessionHistory.length} session{sessionHistory.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -78,7 +73,7 @@ function SessionControls() {
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="mt-3 text-center"
+            className="mt-3 text-center py-2 rounded-xl bg-primary/10"
           >
             <span className="text-lg font-bold text-primary">{replayWord}</span>
           </motion.div>

@@ -1,8 +1,7 @@
-import { memo, useRef, useEffect } from 'react';
+import { memo, useRef, useEffect, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { History, Trash2, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
 
 function ConversationHistory() {
   const { conversationHistory, clearHistory } = useAppStore();
@@ -20,55 +19,50 @@ function ConversationHistory() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getConfidenceColor = (c: number) => {
-    if (c >= 0.9) return 'bg-primary/20 border-primary/30';
-    if (c >= 0.7) return 'bg-accent/15 border-accent/25';
-    return 'bg-destructive/15 border-destructive/25';
-  };
+  if (conversationHistory.length === 0) return null;
 
   return (
-    <div className="glass rounded-2xl p-5 flex flex-col h-full">
-      <div className="flex items-center justify-between mb-3 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <History className="w-4 h-4 text-primary" />
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">History</span>
+    <div className="glass-card rounded-2xl p-4 flex flex-col max-h-[240px]">
+      <div className="flex items-center justify-between mb-2 flex-shrink-0">
+        <div className="panel-header !mb-0">
+          <History className="w-3.5 h-3.5 text-primary" />
+          <span className="panel-label">History</span>
+          <span className="text-[10px] font-mono text-muted-foreground/35 ml-1">
+            ({conversationHistory.length})
+          </span>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={copyAll} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" aria-label="Copy all">
-            {copied ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+          <button onClick={copyAll} className="btn-ghost !h-7 !px-1.5">
+            {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
           </button>
-          <button onClick={clearHistory} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors" aria-label="Clear history">
-            <Trash2 className="w-3.5 h-3.5" />
+          <button onClick={clearHistory} className="btn-ghost !h-7 !px-1.5">
+            <Trash2 className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-2 min-h-0">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-1.5 min-h-0 scrollbar-thin">
         <AnimatePresence initial={false}>
-          {conversationHistory.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">No history yet...</p>
-          ) : (
-            conversationHistory.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className={`px-3 py-2 rounded-xl border ${getConfidenceColor(msg.confidence)}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">{msg.text}</span>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {(msg.confidence * 100).toFixed(0)}%
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(msg.timestamp).toLocaleTimeString()}
+          {conversationHistory.map((msg) => (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-secondary/40"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">{msg.text}</span>
+                <span className="text-[10px] font-mono text-muted-foreground/40">
+                  {(msg.confidence * 100).toFixed(0)}%
                 </span>
-              </motion.div>
-            ))
-          )}
+              </div>
+              <span className="text-[10px] text-muted-foreground/30 font-mono">
+                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            </motion.div>
+          ))}
         </AnimatePresence>
       </div>
     </div>
