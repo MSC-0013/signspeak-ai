@@ -1,32 +1,50 @@
 import { Hand, Sun, Moon, LogOut } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 export default function Navbar() {
-  const { isDark, toggleTheme } = useAppStore();
+  const { isDark, toggleTheme, isDetecting } = useAppStore();
   const { user, logout } = useAuthStore();
+  const location = useLocation();
 
   return (
     <motion.nav
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-      className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-background/80 backdrop-blur-xl"
+      className="fixed top-0 left-0 right-0 z-50 border-b border-border/20 glass-strong"
     >
-      <div className="container mx-auto flex items-center justify-between h-14 px-4">
-        <Link to="/" className="flex items-center gap-2 group">
-          <Hand className="w-4.5 h-4.5 text-primary/70 group-hover:text-primary transition-colors duration-200" />
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between h-14 px-4">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+            <Hand className="w-3.5 h-3.5 text-primary" />
+          </div>
           <span className="text-sm font-semibold tracking-tight text-foreground/90">
-            SignSpeak
+            SignSpeak <span className="text-primary/60 font-normal">AI</span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {/* Active detection indicator */}
+          {isDetecting && location.pathname === '/detect' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 mr-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] font-semibold tracking-wider text-primary uppercase">Active</span>
+            </div>
+          )}
+
+          <Link
+            to="/detect"
+            className="h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all flex items-center"
+          >
+            Detect
+          </Link>
+
           <button
             onClick={toggleTheme}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/30 transition-all duration-200"
+            className="btn-ghost !px-2"
             aria-label="Toggle theme"
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
@@ -39,11 +57,7 @@ export default function Navbar() {
                 alt={user.name}
                 className="w-7 h-7 rounded-full ring-1 ring-border/30 ml-1"
               />
-              <button
-                onClick={logout}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-foreground/80 hover:bg-secondary/30 transition-all duration-200"
-                aria-label="Logout"
-              >
+              <button onClick={logout} className="btn-ghost !px-2" aria-label="Logout">
                 <LogOut className="w-3.5 h-3.5" />
               </button>
             </>
