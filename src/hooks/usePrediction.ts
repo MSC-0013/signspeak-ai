@@ -2,9 +2,10 @@ import { useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useSpeech } from './useSpeech';
 
-const DEBOUNCE_COUNT = 3;
-const COOLDOWN_MS = 800;
-const WINDOW_SIZE = 5;
+const DEBOUNCE_COUNT = 5;
+const COOLDOWN_MS = 2000;
+const WINDOW_SIZE = 7;
+const CONFIDENCE_THRESHOLD = 0.80;
 
 export function usePrediction() {
   const consecutiveRef = useRef({ word: '', count: 0 });
@@ -33,6 +34,14 @@ export function usePrediction() {
 
   const processPrediction = useCallback((word: string, confidence: number) => {
     const startTime = performance.now();
+
+    // Confidence gating — reject low-confidence predictions entirely
+    if (confidence < CONFIDENCE_THRESHOLD) {
+      setPrediction(null);
+      setLatency(Math.round(performance.now() - startTime));
+      return;
+    }
+
     const pred = { word, confidence, timestamp: Date.now() };
     setPrediction(pred);
     updateMetrics(pred);
