@@ -8,6 +8,8 @@ import { useAppStore } from '@/store/useAppStore';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Navbar from '@/components/Navbar';
 import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
 import Detect from "./pages/Detect";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +34,8 @@ const App = () => (
           <Navbar />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/detect" element={<Detect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
