@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogOut, Camera, Clock, Target, BarChart3, Settings2, ChevronRight, Shield } from 'lucide-react';
