@@ -1,43 +1,129 @@
-import { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, memo, useState } from 'react';
 import { useCamera } from '@/hooks/useCamera';
 import { useAppStore } from '@/store/useAppStore';
 import { usePrediction } from '@/hooks/usePrediction';
 import { VideoOff, Camera, Hand, SunDim } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import KeypointOverlay from './KeypointOverlay';
+import { initHandModel, detectGesture, sendDetection, startDetectionSession, endDetectionSession } from '@/utils/handDetection';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
 function CameraFeed() {
   const { videoRef, startCamera, stopCamera } = useCamera();
   const {
-    isDetecting, cameraError, setFps,
-    keypointOverlayVisible, gestureFlash, currentPrediction,
+    isDetecting, cameraError, setFps, setPrediction, updateMetrics, triggerGestureFlash,
+    keypointOverlayVisible, gestureFlash, currentPrediction, addToSentence, sessionId, setSessionId
   } = useAppStore();
   const { simulatePrediction } = usePrediction();
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const detectionRef = useRef<ReturnType<typeof requestAnimationFrame>>();
   const fpsRef = useRef({ frames: 0, lastTime: performance.now() });
+  const [modelLoading, setModelLoading] = useState(true);
+  const lastDetectionRef = useRef<number>(0);
 
+  // Initialize hand detection model
+  useEffect(() => {
+    const initializeModel = async () => {
+      try {
+        await initHandModel();
+        setModelLoading(false);
+      } catch (error) {
+        console.error('Failed to initialize hand model:', error);
+        setModelLoading(false);
+      }
+    };
+    
+    initializeModel();
+  }, []);
+
+  // Detection loop
+  const runDetection = async () => {
+    if (!isDetecting || !videoRef.current || modelLoading) return;
+
+    const now = performance.now();
+    // Run detection at ~8-10 FPS (every 100-125ms)
+    if (now - lastDetectionRef.current < 125) {
+      detectionRef.current = requestAnimationFrame(runDetection);
+      return;
+    }
+    
+    lastDetectionRef.current = now;
+
+    try {
+      const result = await detectGesture(videoRef.current);
+      
+      // Update prediction in store
+      const prediction = {
+        word: result.sign,
+        confidence: result.confidence,
+        timestamp: Date.now()
+      };
+      
+      setPrediction(prediction);
+      updateMetrics(prediction);
+      
+      // Send to backend if we have a session
+      if (sessionId && result.sign !== 'NO_HAND' && result.sign !== 'LOADING' && result.sign !== 'ERROR') {
+        sendDetection(sessionId, result.sign, result.confidence);
+        
+        // Add to sentence if it's a valid gesture
+        if (result.sign !== 'NO_HAND' && result.confidence > 0.7) {
+          addToSentence(result.sign);
+          triggerGestureFlash();
+        }
+      }
+      
+      // Update FPS counter
+      fpsRef.current.frames++;
+      if (now - fpsRef.current.lastTime >= 1000) {
+        setFps(fpsRef.current.frames);
+        fpsRef.current = { frames: 0, lastTime: now };
+      }
+    } catch (error) {
+      console.error('Detection error:', error);
+    }
+
+    detectionRef.current = requestAnimationFrame(runDetection);
+  };
+
+  // Start/stop detection
   useEffect(() => {
     if (isDetecting) {
       startCamera();
-      intervalRef.current = setInterval(() => {
-        simulatePrediction();
-        fpsRef.current.frames++;
-        const now = performance.now();
-        if (now - fpsRef.current.lastTime >= 1000) {
-          setFps(fpsRef.current.frames);
-          fpsRef.current = { frames: 0, lastTime: now };
+      
+      // Start detection session
+      const startSession = async () => {
+        const newSessionId = await startDetectionSession();
+        if (newSessionId) {
+          setSessionId(newSessionId);
         }
-      }, 2000);
+      };
+      startSession();
+      
+      // Start detection loop
+      detectionRef.current = requestAnimationFrame(runDetection);
     } else {
       stopCamera();
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      
+      // End detection session
+      if (sessionId) {
+        endDetectionSession(sessionId);
+        setSessionId(null);
+      }
+      
+      // Cancel detection loop
+      if (detectionRef.current) {
+        cancelAnimationFrame(detectionRef.current);
+      }
     }
+    
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (detectionRef.current) {
+        cancelAnimationFrame(detectionRef.current);
+      }
     };
-  }, [isDetecting, startCamera, stopCamera, simulatePrediction, setFps]);
+  }, [isDetecting, startCamera, stopCamera, modelLoading, sessionId, setSessionId]);
 
   return (
     <div className="relative w-full h-full">
@@ -49,14 +135,18 @@ function CameraFeed() {
         }`}
       >
         {/* Camera error state */}
-        {cameraError ? (
+        {cameraError || modelLoading ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
             <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center">
               <VideoOff className="w-6 h-6 text-destructive/60" />
             </div>
             <div className="space-y-1.5">
-              <p className="text-sm font-medium text-foreground/80">Camera unavailable</p>
-              <p className="text-xs text-muted-foreground/60 max-w-xs">{cameraError}</p>
+              <p className="text-sm font-medium text-foreground/80">
+                {modelLoading ? 'Loading AI Model...' : 'Camera unavailable'}
+              </p>
+              <p className="text-xs text-muted-foreground/60 max-w-xs">
+                {modelLoading ? 'Please wait while we load the hand detection model...' : cameraError}
+              </p>
             </div>
           </div>
         ) : !isDetecting ? (

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
 export default function Login() {
-  const { user, login, isLoading } = useAuthStore();
+  const { user, loginWithGoogle, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,8 +15,14 @@ export default function Login() {
   }, [user, navigate]);
 
   const handleGoogleLogin = async () => {
-    await login();
-    navigate('/detect');
+    try {
+      // Simulate Google OAuth - in production, this would use actual Google OAuth
+      await loginWithGoogle('Alex Morgan', 'alex@example.com', 'https://api.dicebear.com/9.x/notionists/svg?seed=alex');
+      navigate('/detect');
+    } catch (error) {
+      console.error('Login failed:', error);
+      // Handle error (show toast, etc.)
+    }
   };
 
   return (

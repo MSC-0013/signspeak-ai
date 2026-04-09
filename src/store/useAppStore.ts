@@ -131,6 +131,10 @@ interface AppState {
   // Corrections
   addCorrection: (original: string, corrected: string) => void;
   setShowCorrectionModal: (v: boolean) => void;
+
+  // Session ID for backend
+  sessionId: string | null;
+  setSessionId: (id: string | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -168,6 +172,7 @@ export const useAppStore = create<AppState>()(
       practiceResult: 'idle',
       corrections: [],
       showCorrectionModal: false,
+      sessionId: null,
 
       setDetecting: (v) => set({ isDetecting: v }),
       setCameraError: (e) => set({ cameraError: e }),
@@ -273,6 +278,7 @@ export const useAppStore = create<AppState>()(
         showCorrectionModal: false,
       })),
       setShowCorrectionModal: (v) => set({ showCorrectionModal: v }),
+      setSessionId: (id) => set({ sessionId: id }),
     }),
     {
       name: 'slrs-session-v1',
