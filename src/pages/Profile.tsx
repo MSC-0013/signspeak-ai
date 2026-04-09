@@ -11,10 +11,11 @@ export default function Profile() {
   const navigate = useNavigate();
   const { metrics, corrections, sessionHistory, isDark, toggleTheme, privacyMode, togglePrivacyMode } = useAppStore();
 
-  if (!user) {
-    navigate('/login', { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (!user) navigate('/login', { replace: true });
+  }, [user, navigate]);
+
+  if (!user) return null;
 
   const stats = [
     { icon: Camera, label: 'Total Detections', value: metrics.totalPredictions.toLocaleString(), color: 'text-primary' },
@@ -45,7 +46,7 @@ export default function Profile() {
                 alt={user.name}
                 className="w-20 h-20 rounded-2xl ring-2 ring-primary/20"
               />
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-background" />
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-success border-2 border-background" />
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold text-foreground truncate">{user.name}</h1>
