@@ -34,6 +34,14 @@ export function usePrediction() {
 
   const processPrediction = useCallback((word: string, confidence: number) => {
     const startTime = performance.now();
+
+    // Confidence gating — reject low-confidence predictions entirely
+    if (confidence < CONFIDENCE_THRESHOLD) {
+      setPrediction(null);
+      setLatency(Math.round(performance.now() - startTime));
+      return;
+    }
+
     const pred = { word, confidence, timestamp: Date.now() };
     setPrediction(pred);
     updateMetrics(pred);
