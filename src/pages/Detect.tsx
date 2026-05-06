@@ -1,36 +1,30 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '@/store/useAppStore';
 import { Play, Square, RotateCcw, Info } from 'lucide-react';
 import CameraFeed from '@/components/CameraFeed';
-import SentenceBuilder from '@/components/SentenceBuilder';
-import TranslationPanel from '@/components/TranslationPanel';
-import MetricsPanel from '@/components/MetricsPanel';
-import SessionControls from '@/components/SessionControls';
-import PracticePanel from '@/components/PracticePanel';
-import ConversationHistory from '@/components/ConversationHistory';
-import CorrectionModal from '@/components/CorrectionModal';
+import type { DetectionInfo } from '@/components/CameraFeed';
+import RealtimeTranscript from '@/components/RealtimeTranscript';
+import MetricsDashboard from '@/components/MetricsDashboard';
+import QuickSignBar from '@/components/QuickSignBar';
+import GestureGuide from '@/components/GestureGuide';
+import SignFeedback from '@/components/SignFeedback';
 import OnboardingModal from '@/components/OnboardingModal';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useSpeech } from '@/hooks/useSpeech';
+import { SIGN_CATALOG } from '@/utils/gestureClassifier';
+import type { DetectionState } from '@/utils/signValidator';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
-
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.06 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease } },
-};
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } };
 
 export default function Detect() {
   useKeyboardShortcuts();
-  const { isDetecting, setDetecting, clearSentence, resetSession } = useAppStore();
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    return !localStorage.getItem('slrs-onboarded');
-  });
+  const { speak } = useSpeech();
+  const { isDetecting, setDetecting, clearSentence, resetSession, addToSentence, setPrediction, updateMetrics, triggerGestureFlash, speechEnabled } = useAppStore();
+  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('slrs-onboarded'));
+  const [currentDetection, setCurrentDetection] = useState<{ sign: string; confidence: number; state: DetectionState } | null>(null);
 
   const handleOnboardingComplete = useCallback(() => {
     localStorage.setItem('slrs-onboarded', '1');
@@ -38,41 +32,43 @@ export default function Detect() {
     setDetecting(true);
   }, [setDetecting]);
 
+  const handleDetection = useCallback((info: DetectionInfo) => {
+    const { sign, confidence, state, emoji } = info;
+
+    if (sign === 'NO_HAND' || sign === 'LOADING' || sign === 'ERROR') {
+      setCurrentDetection(null);
+      return;
+    }
+
+    setPrediction({ word: sign, confidence, timestamp: Date.now() });
+    updateMetrics({ word: sign, confidence, timestamp: Date.now() });
+
+    if (sign !== 'UNCLEAR') {
+      setCurrentDetection({ sign, confidence, state });
+    } else {
+      setCurrentDetection(null);
+    }
+
+    if (state === 'CONFIRMED') {
+      addToSentence(sign.replace(/_/g, ' '));
+      triggerGestureFlash();
+      if (speechEnabled) speak(sign.replace(/_/g, ' '));
+    }
+  }, [setPrediction, updateMetrics, addToSentence, triggerGestureFlash, speechEnabled, speak]);
+
   return (
     <>
       <div className="min-h-screen pt-16 pb-8 px-4">
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="max-w-[1400px] mx-auto space-y-5"
-        >
-          {/* Page header */}
+        <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-[1400px] mx-auto space-y-5">
+          {/* Header */}
           <motion.div variants={item} className="flex items-center justify-between pt-4">
             <div className="space-y-0.5">
-              <h1 className="text-xl font-bold text-foreground tracking-tight">
-                Sign Language Detection
-              </h1>
-              <p className="text-xs text-muted-foreground/50">
-                Real-time AI communication interface
-              </p>
+              <h1 className="text-xl font-bold text-foreground tracking-tight">Sign Language Detection</h1>
+              <p className="text-xs text-muted-foreground/50">Real-time AI communication • {Object.keys(SIGN_CATALOG).length} signs supported</p>
             </div>
-
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowOnboarding(true)}
-                className="btn-ghost"
-              >
-                <Info className="w-3.5 h-3.5" />
-                Guide
-              </button>
-              <button
-                onClick={() => { clearSentence(); resetSession(); }}
-                className="btn-ghost"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Reset
-              </button>
+              <button onClick={() => setShowOnboarding(true)} className="btn-ghost"><Info className="w-3.5 h-3.5" />Guide</button>
+              <button onClick={() => { clearSentence(); resetSession(); }} className="btn-ghost"><RotateCcw className="w-3.5 h-3.5" />Reset</button>
               <button
                 onClick={() => setDetecting(!isDetecting)}
                 className={`h-9 px-4 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
@@ -87,33 +83,31 @@ export default function Detect() {
             </div>
           </motion.div>
 
-          {/* Main layout: Camera + Sidebar */}
-          <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            {/* LEFT — Camera (7 cols) */}
-            <div className="lg:col-span-7 space-y-4">
-              <CameraFeed />
-              <MetricsPanel />
+          {/* 60/40 Grid */}
+          <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+            {/* LEFT — Camera 60% */}
+            <div className="lg:col-span-3 space-y-4">
+              <CameraFeed onDetection={handleDetection} />
+              <MetricsDashboard />
+              <QuickSignBar />
+              <GestureGuide />
             </div>
 
-            {/* RIGHT — Tools (5 cols) */}
-            <div className="lg:col-span-5 flex flex-col gap-4">
-              <div className="flex-1 min-h-[300px]">
-                <SentenceBuilder />
+            {/* RIGHT — Tools 40% */}
+            <div className="lg:col-span-2 flex flex-col gap-4">
+              <SignFeedback
+                sign={currentDetection?.sign || null}
+                confidence={currentDetection?.confidence || 0}
+                state={currentDetection?.state || 'UNCLEAR'}
+              />
+              <div className="flex-1 min-h-[250px]">
+                <RealtimeTranscript />
               </div>
-              <TranslationPanel />
-              <ConversationHistory />
             </div>
-          </motion.div>
-
-          {/* Bottom panels */}
-          <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SessionControls />
-            <PracticePanel />
           </motion.div>
         </motion.div>
       </div>
 
-      <CorrectionModal />
       <OnboardingModal
         open={showOnboarding}
         onClose={() => setShowOnboarding(false)}
