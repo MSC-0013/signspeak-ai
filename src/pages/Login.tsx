@@ -1,29 +1,84 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Hand, Loader2, Sparkles, Shield, Zap } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useToast } from '@/hooks/use-toast';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          renderButton: (element: HTMLElement, config: any) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
+
 export default function Login() {
-  const { user, loginWithGoogle, isLoading } = useAuthStore();
+  const { user, loginWithGoogle, isLoading, setLoading } = useAuthStore();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) navigate('/detect', { replace: true });
   }, [user, navigate]);
 
-  const handleGoogleLogin = async () => {
+  // Handle real Google Sign-In credential response
+  const handleGoogleCredentialResponse = useCallback(async (response: any) => {
     try {
-      // Simulate Google OAuth - in production, this would use actual Google OAuth
-      await loginWithGoogle('Alex Morgan', 'alex@example.com', 'https://api.dicebear.com/9.x/notionists/svg?seed=alex');
+      setLoading(true);
+      
+      // response.credential is the JWT ID token from Google
+      const idToken = response.credential;
+      
+      // Send ID token to backend for verification
+      await loginWithGoogle(idToken);
+      
+      toast({
+        title: 'Welcome!',
+        description: 'Successfully signed in with Google',
+      });
+      
       navigate('/detect');
     } catch (error) {
-      console.error('Login failed:', error);
-      // Handle error (show toast, etc.)
+      console.error('Google login failed:', error);
+      toast({
+        title: 'Login Failed',
+        description: 'Could not sign in with Google. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [loginWithGoogle, navigate, setLoading, toast]);
+
+  // Initialize Google Identity Services
+  useEffect(() => {
+    if (window.google && googleButtonRef.current) {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse,
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: 400,
+        text: 'continue_with',
+        logo_alignment: 'left',
+      });
+    }
+  }, [handleGoogleCredentialResponse]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
@@ -81,29 +136,27 @@ export default function Login() {
             ))}
           </div>
 
-          {/* Login button */}
+          {/* Google Sign-In Button */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, ease }}
+            className="space-y-3"
           >
-            <button
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 h-12 rounded-xl border border-border bg-secondary/60 hover:bg-secondary text-foreground font-medium text-sm transition-all duration-200 disabled:opacity-50 group"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin text-primary" />
-              ) : (
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                </svg>
-              )}
-              {isLoading ? 'Signing in...' : 'Continue with Google'}
-            </button>
+            {/* Real Google Sign-In Button */}
+            <div 
+              ref={googleButtonRef}
+              className="w-full"
+              style={{ height: '44px' }}
+            />
+            
+            {/* Loading indicator */}
+            {isLoading && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Signing in...
+              </div>
+            )}
           </motion.div>
 
           {/* Terms */}

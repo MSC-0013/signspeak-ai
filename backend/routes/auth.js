@@ -1,9 +1,12 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
 import { protect } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const router = express.Router();
 
@@ -170,12 +173,11 @@ router.get('/me', protect, async (req, res) => {
   }
 });
 
-// @desc    Google OAuth (simplified version)
+// @desc    Google OAuth - Verify Google ID Token
 // @route   POST /api/auth/google
 // @access  Public
 router.post('/google', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
-  body('name').trim().isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters')
+  body('idToken').notEmpty().withMessage('Google ID token is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -187,27 +189,66 @@ router.post('/google', [
       });
     }
 
-    const { email, name, avatar } = req.body;
+    const { idToken } = req.body;
+
+    // Verify Google ID Token
+    let ticket;
+    try {
+      ticket = await client.verifyIdToken({
+        idToken: idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+    } catch (verifyError) {
+      logger.error('Google token verification failed:', verifyError);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid Google token'
+      });
+    }
+
+    const payload = ticket.getPayload();
+    
+    if (!payload) {
+      return res.status(401).json({
+        success: false,
+        message: 'Could not verify Google token'
+      });
+    }
+
+    // Extract verified user info from Google
+    const { sub: googleId, email, name, picture, email_verified } = payload;
+
+    if (!email_verified) {
+      return res.status(401).json({
+        success: false,
+        message: 'Google email not verified'
+      });
+    }
 
     // Check if user exists
     let user = await User.findOne({ email });
     
     if (!user) {
-      // Create new user
+      // Create new user with verified Google data
       user = await User.create({
-        name,
+        name: name || email.split('@')[0],
         email,
-        avatar: avatar || `https://api.dicebear.com/9.x/notionists/svg?seed=${email}`,
+        avatar: picture || `https://api.dicebear.com/9.x/notionists/svg?seed=${email}`,
         isVerified: true,
+        googleId,
         password: Math.random().toString(36).slice(-8) // Random password for OAuth users
       });
       logger.info(`New Google user registered: ${email}`);
     } else {
-      // Update avatar if provided
-      if (avatar && user.avatar !== avatar) {
-        user.avatar = avatar;
-        await user.save();
+      // Update Google ID if not set
+      if (!user.googleId && googleId) {
+        user.googleId = googleId;
       }
+      // Update avatar if changed
+      if (picture && user.avatar !== picture) {
+        user.avatar = picture;
+      }
+      await user.save();
     }
 
     // Update last login

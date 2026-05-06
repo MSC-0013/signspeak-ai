@@ -26,10 +26,11 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   login: (email?: string, password?: string) => Promise<void>;
-  loginWithGoogle: (name: string, email: string, avatar?: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+  setLoading: (loading: boolean) => void;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -69,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      loginWithGoogle: async (name, email, avatar) => {
+      loginWithGoogle: async (idToken: string) => {
         set({ isLoading: true });
         try {
           const response = await fetch(`${API_BASE_URL}/auth/google`, {
@@ -77,7 +78,7 @@ export const useAuthStore = create<AuthState>()(
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name, email, avatar }),
+            body: JSON.stringify({ idToken }),
           });
 
           const data = await response.json();
@@ -139,6 +140,10 @@ export const useAuthStore = create<AuthState>()(
             user: { ...currentUser, ...userData },
           });
         }
+      },
+      
+      setLoading: (loading) => {
+        set({ isLoading: loading });
       },
     }),
     {
