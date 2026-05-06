@@ -170,7 +170,7 @@ function CameraFeed({ onDetection }: CameraFeedProps) {
   return (
     <div className="relative w-full h-full">
       <div
-        className={`relative w-full aspect-video rounded-2xl overflow-hidden bg-card transition-all duration-500 ${
+        className={`relative w-full aspect-[16/8.8] rounded-2xl overflow-hidden bg-card transition-all duration-500 ${
           gestureFlash ? 'ring-2 ring-primary/50 glow-primary' : 'ring-1 ring-border/40'
         }`}
       >
@@ -249,7 +249,7 @@ function CameraFeed({ onDetection }: CameraFeedProps) {
             >
               <span className="text-2xl">{currentSign.emoji}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{currentSign.sign.replace(/_/g, ' ')}</p>
+                <p className="text-sm font-semibold text-foreground truncate">{SIGN_CATALOG[currentSign.sign]?.label || currentSign.sign.replace(/_/g, ' ')}</p>
                 <div className="mt-1 h-1.5 rounded-full bg-secondary/60 overflow-hidden">
                   <motion.div
                     className={`h-full rounded-full ${currentSign.confidence >= 0.85 ? 'bg-emerald-400' : currentSign.confidence >= 0.7 ? 'bg-amber-400' : 'bg-red-400'}`}

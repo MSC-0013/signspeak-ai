@@ -16,7 +16,7 @@ const steps = [
   {
     icon: Sparkles,
     title: 'Start Signing',
-    desc: 'Make sign language gestures and watch them convert to text instantly. The AI learns as you go.',
+    desc: 'Use supported hand gestures in front of the camera. The system detects stable one-hand signs in real time.',
   },
 ];
 

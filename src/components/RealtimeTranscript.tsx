@@ -33,7 +33,9 @@ function RealtimeTranscript() {
       <div className="flex-1 min-h-[80px] flex flex-wrap content-start gap-2 overflow-y-auto scrollbar-thin">
         <AnimatePresence mode="popLayout">
           {sentence.map((word, i) => {
-            const emoji = SIGN_CATALOG[word.toUpperCase()]?.emoji || SIGN_CATALOG[word.toUpperCase().replace(/ /g, '_')]?.emoji;
+            const key = word.toUpperCase().replace(/ /g, '_');
+            const emoji = SIGN_CATALOG[key]?.emoji || SIGN_CATALOG[word.toUpperCase()]?.emoji;
+            const label = SIGN_CATALOG[key]?.label || word;
             return (
               <motion.span
                 key={`${word}-${i}`}
@@ -44,7 +46,7 @@ function RealtimeTranscript() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-sm font-medium"
               >
                 {emoji && <span className="text-base">{emoji}</span>}
-                {word}
+                {label}
               </motion.span>
             );
           })}

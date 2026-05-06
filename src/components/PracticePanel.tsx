@@ -1,9 +1,10 @@
 import { memo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { SIGN_CATALOG } from '@/utils/gestureClassifier';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 
-const PRACTICE_WORDS = ['Hello', 'Thank you', 'Yes', 'No', 'Please', 'Sorry', 'Help', 'Good', 'Love'];
+const PRACTICE_WORDS = ['THUMBS_UP', 'BAD', 'PEACE', 'ROCK', 'CALL_ME', 'OPEN_SPREAD', 'FIST', 'ONE', 'STOP', 'OKAY', 'THREE_SPLIT'];
 
 function PracticePanel() {
   const { practiceMode, togglePracticeMode, practiceTarget, setPracticeTarget, practiceResult } = useAppStore();
@@ -73,7 +74,7 @@ function PracticePanel() {
                       : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
                   }`}
                 >
-                  {w}
+                  {SIGN_CATALOG[w]?.label || w.replace(/_/g, ' ')}
                 </button>
               ))}
               <button

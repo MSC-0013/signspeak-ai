@@ -98,7 +98,7 @@ export function usePrediction() {
   }, [setPrediction, addToSentence, speak, addHistoryMessage, updateMetrics, triggerGestureFlash, smoothingEnabled, getMostFrequent, setLatency, isRecording, practiceMode, practiceTarget, setPracticeResult]);
 
   const simulatePrediction = useCallback(() => {
-    const words = ['Hello', 'Thank you', 'Yes', 'No', 'Please', 'Sorry', 'Help', 'Good', 'Bad', 'Love'];
+    const words = ['THUMBS_UP', 'THUMBS_DOWN', 'PEACE', 'ROCK', 'CALL_ME', 'OPEN_SPREAD', 'FIST', 'ONE', 'STOP', 'OKAY', 'THREE_SPLIT'];
     const word = words[Math.floor(Math.random() * words.length)];
     const confidence = 0.7 + Math.random() * 0.3;
     processPrediction(word, confidence);

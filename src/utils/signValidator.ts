@@ -3,8 +3,8 @@
 import type { GestureResult } from './gestureClassifier';
 
 const HISTORY_SIZE = 10;
-const STABILITY_THRESHOLD = 5;
-const DEBOUNCE_MS = 1000;
+const STABILITY_THRESHOLD = 10;
+const DEBOUNCE_MS = 700;
 const CONFIDENCE_BOOST_PER_FRAME = 0.02;
 const MAX_CONFIDENCE = 0.99;
 const MIN_LANDMARKS = 16;

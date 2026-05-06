@@ -50,18 +50,19 @@ export default function Detect() {
     }
 
     if (state === 'CONFIRMED') {
-      addToSentence(sign.replace(/_/g, ' '));
+      const label = SIGN_CATALOG[sign]?.label || sign.replace(/_/g, ' ');
+      addToSentence(label);
       triggerGestureFlash();
-      if (speechEnabled) speak(sign.replace(/_/g, ' '));
+      if (speechEnabled) speak(label);
     }
   }, [setPrediction, updateMetrics, addToSentence, triggerGestureFlash, speechEnabled, speak]);
 
   return (
     <>
-      <div className="min-h-screen pt-16 pb-8 px-4">
-        <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-[1400px] mx-auto space-y-5">
+      <div className="min-h-screen pt-12 pb-5 px-4">
+        <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-[1320px] mx-auto space-y-3">
           {/* Header */}
-          <motion.div variants={item} className="flex items-center justify-between pt-4">
+          <motion.div variants={item} className="flex items-center justify-between">
             <div className="space-y-0.5">
               <h1 className="text-xl font-bold text-foreground tracking-tight">Sign Language Detection</h1>
               <p className="text-xs text-muted-foreground/50">Real-time AI communication • {Object.keys(SIGN_CATALOG).length} signs supported</p>
@@ -84,23 +85,32 @@ export default function Detect() {
           </motion.div>
 
           {/* 60/40 Grid */}
-          <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-5 gap-3 items-start">
             {/* LEFT — Camera 60% */}
-            <div className="lg:col-span-3 space-y-4">
-              <CameraFeed onDetection={handleDetection} />
-              <MetricsDashboard />
-              <QuickSignBar />
+            <div className="lg:col-span-3 flex flex-col gap-3">
+              {/* Camera */}
+              <div className="flex-shrink-0">
+                <CameraFeed onDetection={handleDetection} />
+              </div>
+
+              {/* Metrics + Quick Signs */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                <MetricsDashboard />
+                <QuickSignBar />
+              </div>
+
+              {/* Guide */}
               <GestureGuide />
             </div>
 
             {/* RIGHT — Tools 40% */}
-            <div className="lg:col-span-2 flex flex-col gap-4">
+            <div className="lg:col-span-2 flex flex-col gap-3 h-full">
               <SignFeedback
                 sign={currentDetection?.sign || null}
                 confidence={currentDetection?.confidence || 0}
                 state={currentDetection?.state || 'UNCLEAR'}
               />
-              <div className="flex-1 min-h-[250px]">
+              <div className="flex-1 min-h-0">
                 <RealtimeTranscript />
               </div>
             </div>

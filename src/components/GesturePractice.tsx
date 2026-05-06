@@ -1,9 +1,10 @@
 import { memo, useState, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { SIGN_CATALOG } from '@/utils/gestureClassifier';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 
-const PRACTICE_WORDS = ['Hello', 'Thank you', 'Yes', 'No', 'Please', 'Sorry', 'Help', 'Good', 'Love'];
+const PRACTICE_WORDS = ['THUMBS_UP', 'BAD', 'PEACE', 'ROCK', 'CALL_ME', 'OPEN_SPREAD', 'FIST', 'ONE', 'STOP', 'OKAY', 'THREE_SPLIT'];
 
 function GesturePractice() {
   const { currentPrediction } = useAppStore();
@@ -46,7 +47,7 @@ function GesturePractice() {
             exit={{ opacity: 0, scale: 0.8 }}
             className="text-3xl font-bold text-foreground"
           >
-            {target}
+            {SIGN_CATALOG[target]?.label || target.replace(/_/g, ' ')}
           </motion.p>
         </AnimatePresence>
 
@@ -60,6 +61,22 @@ function GesturePractice() {
             <span className="text-sm font-medium">{result === 'correct' ? 'Correct!' : 'Try again'}</span>
           </motion.div>
         )}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {PRACTICE_WORDS.map((w) => (
+          <button
+            key={w}
+            onClick={() => setTarget(w)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+              target === w
+                ? 'bg-primary/15 text-primary ring-1 ring-primary/20'
+                : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80'
+            }`}
+          >
+            {SIGN_CATALOG[w]?.label || w.replace(/_/g, ' ')}
+          </button>
+        ))}
       </div>
 
       <div className="flex gap-2">

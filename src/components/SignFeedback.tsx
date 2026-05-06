@@ -14,6 +14,7 @@ function SignFeedback({ sign, confidence, state }: Props) {
 
   const info = SIGN_CATALOG[sign];
   const emoji = info?.emoji || '❓';
+  const label = info?.label || sign.replace(/_/g, ' ');
   const confColor = confidence >= 0.85 ? 'bg-emerald-400' : confidence >= 0.7 ? 'bg-amber-400' : 'bg-red-400';
 
   return (
@@ -28,7 +29,7 @@ function SignFeedback({ sign, confidence, state }: Props) {
       >
         <span className="text-3xl">{emoji}</span>
         <div className="flex-1 min-w-0">
-          <p className="text-base font-bold text-foreground">{sign.replace(/_/g, ' ')}</p>
+          <p className="text-base font-bold text-foreground">{label}</p>
           <div className="flex items-center gap-2 mt-1.5">
             <div className="flex-1 h-1.5 rounded-full bg-secondary/50 overflow-hidden">
               <motion.div

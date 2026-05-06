@@ -54,7 +54,7 @@ function SentenceBuilder() {
           Current Detection
         </span>
         <AnimatePresence mode="wait">
-          {currentPrediction ? (
+          {currentPrediction && currentPrediction.word !== 'UNKNOWN' ? (
             <motion.div
               key={currentPrediction.word + currentPrediction.timestamp}
               initial={{ opacity: 0, y: 4 }}
@@ -70,6 +70,8 @@ function SentenceBuilder() {
                 {(currentPrediction.confidence * 100).toFixed(0)}%
               </span>
             </motion.div>
+          ) : currentPrediction ? (
+            <p className="text-sm text-muted-foreground/30 italic">Gesture not recognized</p>
           ) : (
             <p className="text-sm text-muted-foreground/30 italic">Waiting for gesture…</p>
           )}

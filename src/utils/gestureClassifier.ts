@@ -27,31 +27,76 @@ export interface GestureResult {
   emoji: string;
   confidence: number;
   quality: 'high' | 'medium' | 'low';
+  state?: 'UNCLEAR' | 'DETECTING' | 'CONFIRMED';
 }
 
-export const SIGN_CATALOG: Record<string, { emoji: string; description: string; category: string }> = {
-  OKAY: { emoji: '👌', description: 'Thumb and index form circle, others extended', category: 'Responses' },
-  THANK_YOU: { emoji: '🤝', description: 'Flat hand moves from chin forward', category: 'Greetings' },
-  SORRY: { emoji: '🤲', description: 'Fist circles over chest', category: 'Emotions' },
-  HELLO: { emoji: '👋', description: 'Open hand wave', category: 'Greetings' },
-  YES: { emoji: '👍', description: 'Thumbs up', category: 'Responses' },
-  NO: { emoji: '✋', description: 'Open palm facing forward', category: 'Responses' },
-  PLEASE: { emoji: '🙏', description: 'Flat hand circles on chest', category: 'Greetings' },
-  HELP: { emoji: '🆘', description: 'Fist on open palm, lifted', category: 'Actions' },
-  STOP: { emoji: '🛑', description: 'Open palm pushed forward', category: 'Actions' },
-  GOOD: { emoji: '👍', description: 'Thumbs up gesture', category: 'Responses' },
-  BAD: { emoji: '👎', description: 'Thumbs down gesture', category: 'Emotions' },
-  LOVE: { emoji: '❤️', description: 'Cross arms over chest', category: 'Emotions' },
-  EAT: { emoji: '🍽️', description: 'Fingers to mouth', category: 'Actions' },
-  DRINK: { emoji: '🥤', description: 'C-shape tilted to mouth', category: 'Actions' },
-  FRIEND: { emoji: '🤝', description: 'Hook index fingers together', category: 'Greetings' },
-  WHERE: { emoji: '❓', description: 'Index finger wag side to side', category: 'Questions' },
-  WHAT: { emoji: '❔', description: 'Open palms up, shrug', category: 'Questions' },
-  FIST: { emoji: '✊', description: 'All fingers closed', category: 'Actions' },
-  OPEN_HAND: { emoji: '🖐️', description: 'All fingers spread open', category: 'Actions' },
-  PEACE: { emoji: '✌️', description: 'Index and middle fingers up', category: 'Responses' },
-  POINT: { emoji: '👉', description: 'Only index finger extended', category: 'Actions' },
-  THUMBS_UP: { emoji: '👍', description: 'Thumb up, fingers closed', category: 'Responses' },
+export const SIGN_CATALOG: Record<string, { emoji: string; label: string; description: string; category: string }> = {
+  THUMBS_UP: {
+    emoji: '👍',
+    label: 'THUMBS UP',
+    category: 'responses',
+    description: 'Thumb pointing upward'
+  },
+  THUMBS_DOWN: {
+    emoji: '👎',
+    label: 'THUMBS DOWN',
+    category: 'responses',
+    description: 'Thumb pointing downward'
+  },
+  PEACE: {
+    emoji: '✌️',
+    label: 'PEACE',
+    category: 'basic',
+    description: 'Index and middle fingers extended'
+  },
+  ROCK: {
+    emoji: '🤟',
+    label: 'ROCK',
+    category: 'basic',
+    description: 'Thumb, index, and pinky extended'
+  },
+  CALL_ME: {
+    emoji: '🤙',
+    label: 'CALL ME',
+    category: 'basic',
+    description: 'Thumb and pinky extended'
+  },
+  OPEN_SPREAD: {
+    emoji: '🖐️',
+    label: 'OPEN HAND',
+    category: 'basic',
+    description: 'All fingers spread wide'
+  },
+  FIST: {
+    emoji: '✊',
+    label: 'FIST',
+    category: 'basic',
+    description: 'All fingertips close to palm'
+  },
+  ONE: {
+    emoji: '☝️',
+    label: 'ONE',
+    category: 'basic',
+    description: 'Single index finger'
+  },
+  STOP: {
+    emoji: '✋',
+    label: 'STOP',
+    category: 'actions',
+    description: 'Open palm facing the camera'
+  },
+  OKAY: {
+    emoji: '👌',
+    label: 'OKAY',
+    category: 'responses',
+    description: 'Thumb and index finger touching'
+  },
+  THREE_SPLIT: {
+    emoji: '🖖',
+    label: 'THREE SPLIT',
+    category: 'basic',
+    description: 'Index and middle close, ring and pinky close'
+  }
 };
 
 // Vector math helpers
@@ -155,123 +200,86 @@ export function analyzeHand(landmarks: number[][]): HandAnalysis {
 }
 
 export function classifyGesture(analysis: HandAnalysis): GestureResult {
-  const { fingers, landmarks } = analysis;
+  const { fingers, landmarks, palmCenter } = analysis;
   const { thumb, index, middle, ring, pinky } = fingers;
   const handSize = analysis.handSize;
+  const palmWidth = dist2D(landmarks[5], landmarks[17]);
 
-  // Helper counts
-  const extCount = [thumb, index, middle, ring, pinky].filter(f => f.extended).length;
-  const curlCount = [index, middle, ring, pinky].filter(f => f.curled).length;
+  const extCount = [thumb, index, middle, ring, pinky].filter((f) => f.extended).length;
+  const curlCount = [index, middle, ring, pinky].filter((f) => f.curled).length;
+  const allExtended = thumb.extended && index.extended && middle.extended && ring.extended && pinky.extended;
+  const avgFingertipDistance = [4, 8, 12, 16, 20].reduce((sum, i) => sum + dist2D(landmarks[i], palmCenter), 0) / 5;
+  const normalizedTipDistance = palmWidth > 0 ? avgFingertipDistance / palmWidth : 1;
+  const thumbIndexDist = dist2D(landmarks[4], landmarks[8]);
+  const normalizedThumbIndex = palmWidth > 0 ? thumbIndexDist / palmWidth : 1;
+  const indexMiddleDist = dist2D(landmarks[8], landmarks[12]);
+  const ringPinkyDist = dist2D(landmarks[16], landmarks[20]);
+  const middleRingDist = dist2D(landmarks[12], landmarks[16]);
+  const spread = dist2D(landmarks[8], landmarks[20]);
+  const relSpread = palmWidth > 0 ? spread / palmWidth : 0;
+  const palmRatio = palmWidth / Math.max(1, handSize);
 
-  // ---------- FIST ----------
-  if (!thumb.extended && curlCount >= 3) {
-    return { sign: 'FIST', emoji: '✊', confidence: 0.88 + (curlCount / 20), quality: 'high' };
+  const normalizeResult = (result: GestureResult): GestureResult => {
+    if (result.confidence < 0.88) {
+      return { sign: 'UNKNOWN', emoji: '❓', confidence: 0, quality: 'low', state: 'UNCLEAR' };
+    }
+    return result;
+  };
+
+  // Reject side-facing and unstable hands early
+  if (palmRatio < 0.40 || handSize < 0.05) {
+    return { sign: 'UNKNOWN', emoji: '❓', confidence: 0, quality: 'low', state: 'UNCLEAR' };
   }
 
-  // ---------- THUMBS_UP / YES / GOOD ----------
-  if (thumb.extended && curlCount >= 3) {
-    // Check thumb pointing up (tip.y < mcp.y in screen coords)
+  // ---------- FIST ----------
+  if (normalizedTipDistance < 0.20 && curlCount >= 3) {
+    return normalizeResult({ sign: 'FIST', emoji: '✊', confidence: 0.92, quality: 'high' });
+  }
+
+  // ---------- THUMBS UP / THUMBS DOWN ----------
+  if (thumb.extended && !index.extended && !middle.extended && !ring.extended && !pinky.extended) {
     if (landmarks[4][1] < landmarks[2][1]) {
-      return { sign: 'THUMBS_UP', emoji: '👍', confidence: 0.90, quality: 'high' };
+      return normalizeResult({ sign: 'THUMBS_UP', emoji: '👍', confidence: 0.93, quality: 'high' });
+    }
+    if (landmarks[4][1] > landmarks[2][1]) {
+      return normalizeResult({ sign: 'BAD', emoji: '👎', confidence: 0.93, quality: 'high' });
     }
   }
 
-  // ---------- BAD (thumbs down) ----------
-  if (thumb.extended && curlCount >= 3 && landmarks[4][1] > landmarks[2][1]) {
-    return { sign: 'BAD', emoji: '👎', confidence: 0.88, quality: 'high' };
+  // ---------- CALL_ME ----------
+  if (thumb.extended && pinky.extended && !index.extended && !middle.extended && !ring.extended) {
+    return normalizeResult({ sign: 'CALL_ME', emoji: '🤙', confidence: 0.92, quality: 'high' });
   }
 
-  // ---------- POINT ----------
-  if (index.extended && !middle.extended && !ring.extended && !pinky.extended) {
-    return { sign: 'POINT', emoji: '👉', confidence: 0.89, quality: 'high' };
+  // ---------- ROCK ----------
+  if (thumb.extended && index.extended && pinky.extended && middle.curled && ring.curled) {
+    return normalizeResult({ sign: 'ROCK', emoji: '🤟', confidence: 0.92, quality: 'high' });
+  }
+
+  // ---------- THREE_SPLIT ----------
+  if (allExtended && indexMiddleDist / palmWidth < 0.28 && ringPinkyDist / palmWidth < 0.28 && middleRingDist / palmWidth > 0.45) {
+    return normalizeResult({ sign: 'THREE_SPLIT', emoji: '🖖', confidence: 0.92, quality: 'high' });
+  }
+
+  // ---------- OKAY ----------
+  if (normalizedThumbIndex < 0.22 && middle.extended && ring.extended && pinky.extended) {
+    return normalizeResult({ sign: 'OKAY', emoji: '👌', confidence: 0.92, quality: 'high' });
   }
 
   // ---------- PEACE ----------
   if (index.extended && middle.extended && !ring.extended && !pinky.extended) {
-    return { sign: 'PEACE', emoji: '✌️', confidence: 0.91, quality: 'high' };
+    return normalizeResult({ sign: 'PEACE', emoji: '✌️', confidence: 0.92, quality: 'high' });
   }
 
-  // ---------- OKAY ----------
-  if (handSize > 0) {
-    const thumbIndexDist = dist2D(landmarks[4], landmarks[8]);
-    const relDist = thumbIndexDist / handSize;
-    if (relDist < 0.15 && middle.extended && ring.extended && pinky.extended) {
-      return { sign: 'OKAY', emoji: '👌', confidence: 0.92, quality: 'high' };
-    }
+  // ---------- STOP ----------
+  if (allExtended && relSpread < 0.58 && thumb.extended) {
+    return normalizeResult({ sign: 'STOP', emoji: '✋', confidence: 0.91, quality: 'high' });
   }
 
-  // ---------- OPEN_HAND / HELLO / STOP / NO ----------
-  if (extCount >= 4 && index.extended && middle.extended && ring.extended && pinky.extended) {
-    // Spread fingers → OPEN_HAND / HELLO
-    const spread = dist2D(landmarks[8], landmarks[20]);
-    const relSpread = handSize > 0 ? spread / handSize : 0;
-    if (relSpread > 0.8) {
-      return { sign: 'HELLO', emoji: '👋', confidence: 0.87, quality: 'high' };
-    }
-    // Fingers together → STOP / NO
-    if (relSpread < 0.6) {
-      return { sign: 'STOP', emoji: '🛑', confidence: 0.85, quality: 'medium' };
-    }
-    return { sign: 'OPEN_HAND', emoji: '🖐️', confidence: 0.86, quality: 'high' };
+  // ---------- ONE ----------
+  if (index.extended && !middle.extended && !ring.extended && !pinky.extended && !thumb.extended) {
+    return normalizeResult({ sign: 'ONE', emoji: '☝️', confidence: 0.90, quality: 'high' });
   }
 
-  // ---------- PLEASE (prayer: all fingers together, tips close) ----------
-  if (index.extended && middle.extended && ring.extended && pinky.extended) {
-    const tipSpread = dist2D(landmarks[8], landmarks[20]);
-    if (handSize > 0 && tipSpread / handSize < 0.35) {
-      return { sign: 'PLEASE', emoji: '🙏', confidence: 0.83, quality: 'medium' };
-    }
-  }
-
-  // ---------- LOVE (index + pinky extended, middle + ring curled) ----------
-  if (index.extended && pinky.extended && middle.curled && ring.curled && thumb.extended) {
-    return { sign: 'LOVE', emoji: '❤️', confidence: 0.90, quality: 'high' };
-  }
-
-  // ---------- EAT (all fingertips near each other, bunched) ----------
-  if (handSize > 0) {
-    const tips = [4, 8, 12, 16, 20];
-    const tipCenter = tips.reduce((a, i) => [a[0] + landmarks[i][0] / 5, a[1] + landmarks[i][1] / 5], [0, 0]);
-    const avgDist = tips.reduce((s, i) => s + dist2D(landmarks[i], tipCenter), 0) / 5;
-    if (avgDist / handSize < 0.15) {
-      return { sign: 'EAT', emoji: '🍽️', confidence: 0.82, quality: 'medium' };
-    }
-  }
-
-  // ---------- DRINK (C-shape: thumb extended, fingers curled but not tight) ----------
-  if (thumb.extended && index.angle > 40 && index.angle < 100 && middle.angle > 40 && middle.angle < 100) {
-    return { sign: 'DRINK', emoji: '🥤', confidence: 0.80, quality: 'medium' };
-  }
-
-  // ---------- HELP (fist on open palm proxy: tight fist) ----------
-  if (curlCount === 4 && thumb.curled) {
-    return { sign: 'HELP', emoji: '🆘', confidence: 0.78, quality: 'low' };
-  }
-
-  // ---------- SORRY (fist circling — approximated as fist with thumb over) ----------
-  if (curlCount >= 3 && thumb.extended && landmarks[4][1] > landmarks[3][1]) {
-    return { sign: 'SORRY', emoji: '🤲', confidence: 0.76, quality: 'low' };
-  }
-
-  // ---------- FRIEND (hooked index fingers proxy: index partially curled) ----------
-  if (index.angle > 40 && index.angle < 90 && middle.curled && ring.curled && pinky.curled) {
-    return { sign: 'FRIEND', emoji: '🤝', confidence: 0.75, quality: 'low' };
-  }
-
-  // ---------- WHERE (index extended, wagging) ----------
-  if (index.extended && !middle.extended && !ring.extended && !pinky.extended && thumb.extended) {
-    return { sign: 'WHERE', emoji: '❓', confidence: 0.77, quality: 'medium' };
-  }
-
-  // ---------- WHAT (open palms, shrug proxy) ----------
-  if (extCount >= 3 && !thumb.extended) {
-    return { sign: 'WHAT', emoji: '❔', confidence: 0.74, quality: 'low' };
-  }
-
-  // ---------- THANK_YOU (flat hand from chin) ----------
-  if (index.extended && middle.extended && ring.extended && pinky.extended && !thumb.extended) {
-    return { sign: 'THANK_YOU', emoji: '🤝', confidence: 0.79, quality: 'medium' };
-  }
-
-  return { sign: 'UNCLEAR', emoji: '❓', confidence: 0, quality: 'low' };
+  return { sign: 'UNKNOWN', emoji: '❓', confidence: 0, quality: 'low', state: 'UNCLEAR' };
 }

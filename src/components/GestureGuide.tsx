@@ -30,7 +30,7 @@ function GestureGuide() {
                 <div key={sign} className="flex items-start gap-2 p-2 rounded-xl bg-secondary/20">
                   <span className="text-lg shrink-0">{info.emoji}</span>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold text-foreground/80 truncate">{sign.replace(/_/g, ' ')}</p>
+                    <p className="text-[11px] font-semibold text-foreground/80 truncate">{info.label || sign.replace(/_/g, ' ')}</p>
                     <p className="text-[9px] text-muted-foreground/50 leading-tight">{info.description}</p>
                   </div>
                 </div>

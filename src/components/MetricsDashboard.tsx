@@ -24,9 +24,9 @@ function MetricsDashboard() {
   ];
 
   return (
-    <div className="glass-card rounded-2xl p-4">
+    <div className="glass-card rounded-2xl p-3">
       <span className="panel-label">Metrics</span>
-      <div className="grid grid-cols-4 gap-3 mt-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3">
         {items.map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="flex flex-col items-center gap-1 p-2 rounded-xl bg-secondary/20">
             <Icon className={`w-4 h-4 ${color}`} />
